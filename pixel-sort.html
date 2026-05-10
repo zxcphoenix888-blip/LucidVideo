@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Sort Video FX</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Rajdhani', sans-serif; background: linear-gradient(135deg, #0a0a0f, #1a1a2e); color: #e0e0e0; min-height: 100vh; padding: 20px; }
+        h1 { text-align: center; margin-bottom: 20px; font-family: 'Orbitron', sans-serif; font-size: 1.8rem; letter-spacing: 3px; color: #fff; text-shadow: 0 0 20px rgba(0, 200, 255, 0.5); background: linear-gradient(90deg, #00d4ff, #a855f7, #00d4ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: shine 3s linear infinite; }
+        @keyframes shine { to { background-position: 200% center; } }
+        .container { max-width: 800px; margin: 0 auto; }
+        .panel { background: rgba(20, 20, 35, 0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+        .panel-title { font-size: 12px; text-transform: uppercase; letter-spacing: 3px; color: #666; font-weight: 700; margin-bottom: 15px; }
+        .upload-box { border: 2px dashed rgba(0, 212, 255, 0.3); border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.3s; }
+        .upload-box:hover { border-color: rgba(0, 212, 255, 0.6); background: rgba(0, 212, 255, 0.05); }
+        .upload-box input { display: none; }
+        .upload-box p { color: #888; font-size: 16px; }
+        .upload-box .icon { font-size: 40px; display: block; margin-bottom: 10px; }
+        video { display: none; }
+        canvas { width: 100%; background: #000; border-radius: 8px; display: block; }
+        .controls { display: flex; flex-direction: column; gap: 12px; max-width: 600px; margin: 0 auto; }
+        .control-row { display: flex; align-items: center; gap: 12px; }
+        .control-row label { width: 70px; font-size: 11px; color: #aaa; font-weight: 500; text-transform: uppercase; }
+        .control-row input[type="range"] { flex: 1; height: 6px; -webkit-appearance: none; background: linear-gradient(90deg, #1a1a2e, #2a2a4e); border-radius: 3px; }
+        .control-row input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: linear-gradient(135deg, #00d4ff, #a855f7); border-radius: 50%; }
+        .control-row span { width: 35px; text-align: right; font-size: 13px; color: #00d4ff; font-weight: 700; font-family: 'Orbitron', sans-serif; }
+        .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+        button { flex: 1; min-width: 80px; padding: 10px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(168, 85, 247, 0.2)); color: #fff; border: 1px solid rgba(0, 212, 255, 0.4); border-radius: 6px; cursor: pointer; font-family: 'Rajdhani', sans-serif; }
+        button:hover:not(:disabled) { background: linear-gradient(135deg, rgba(0, 212, 255, 0.4), rgba(168, 85, 247, 0.4)); }
+        button:disabled { background: rgba(50, 50, 70, 0.5); color: #555; cursor: not-allowed; }
+        button.record-btn { background: linear-gradient(135deg, rgba(255, 50, 50, 0.2), rgba(255, 100, 50, 0.2)); border-color: rgba(255, 80, 80, 0.4); }
+        button.record-btn.recording { background: linear-gradient(135deg, #ff3333, #ff6666); animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { box-shadow: 0 0 15px rgba(255, 50, 50, 0.5); } 50% { box-shadow: 0 0 25px rgba(255, 50, 50, 0.8); } }
+        .status { text-align: center; font-size: 11px; color: #666; font-family: 'Orbitron', sans-serif; letter-spacing: 1px; margin-top: 10px; }
+        .status.recording { color: #ff4444; }
+        .presets { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+        .preset-btn { padding: 6px 12px; font-size: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #888; cursor: pointer; }
+        .preset-btn:hover { background: rgba(0, 212, 255, 0.2); color: #00d4ff; }
+    </style>
+</head>
+<body>
+    <h1>PIXEL SORT VIDEO FX</h1>
+    <div class="container">
+        <div class="panel">
+            <div class="panel-title">Загрузка видео</div>
+            <label class="upload-box">
+                <input type="file" id="videoInput" accept="video/mp4,video/webm">
+                <span class="icon">🎬</span>
+                <p>Выбери видео</p>
+            </label>
+            <video id="video" playsinline loop></video>
+            <canvas id="canvas"></canvas>
+        </div>
+    </div>
+    <div class="controls">
+        <div class="presets">
+            <button class="preset-btn" onclick="applyPreset('psychedelic')">🌈 Psychedelic</button>
+            <button class="preset-btn" onclick="applyPreset('glitch')">⚡ Glitch</button>
+            <button class="preset-btn" onclick="applyPreset('subtle')">✨ Subtle</button>
+            <button class="preset-btn" onclick="applyPreset('rainbow')">🌊 Rainbow</button>
+        </div>
+        <div class="control-row"><label>Intensity</label><input type="range" id="intensity" min="10" max="150" value="60"><span id="intensityVal">60</span></div>
+        <div class="control-row"><label>Threshold</label><input type="range" id="threshold" min="0" max="255" value="100"><span id="thresholdVal">100</span></div>
+        <div class="control-row"><label>Speed</label><input type="range" id="speed" min="1" max="20" value="8"><span id="speedVal">8</span></div>
+        <div class="control-row"><label>Hue</label><input type="range" id="hue" min="0" max="180" value="80"><span id="hueVal">80</span></div>
+        <div class="control-row"><label>Glitch</label><input type="range" id="glitch" min="0" max="50" value="20"><span id="glitchVal">20</span></div>
+        <div class="btn-row">
+            <button id="playBtn" disabled>▶</button>
+            <button id="stopBtn" disabled>⏹</button>
+            <button id="recordBtn" disabled class="record-btn">⏺</button>
+        </div>
+    </div>
+    <div class="status" id="status"></div>
+
+    <script>
+        const videoInput = document.getElementById('videoInput');
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d', { alpha: false });
+        const playBtn = document.getElementById('playBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const recordBtn = document.getElementById('recordBtn');
+        const intensitySlider = document.getElementById('intensity');
+        const thresholdSlider = document.getElementById('threshold');
+        const speedSlider = document.getElementById('speed');
+        const hueSlider = document.getElementById('hue');
+        const glitchSlider = document.getElementById('glitch');
+        const intensityVal = document.getElementById('intensityVal');
+        const thresholdVal = document.getElementById('thresholdVal');
+        const speedVal = document.getElementById('speedVal');
+        const hueVal = document.getElementById('hueVal');
+        const glitchVal = document.getElementById('glitchVal');
+        const statusEl = document.getElementById('status');
+
+        let isPlaying = false, time = 0, mediaRecorder = null, recordedChunks = [], isRecording = false;
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        let processWidth = isMobile ? 320 : 480;
+
+        intensitySlider.oninput = () => intensityVal.textContent = intensitySlider.value;
+        thresholdSlider.oninput = () => thresholdVal.textContent = thresholdSlider.value;
+        speedSlider.oninput = () => speedVal.textContent = speedSlider.value;
+        hueSlider.oninput = () => hueVal.textContent = hueSlider.value;
+        glitchSlider.oninput = () => glitchVal.textContent = glitchSlider.value;
+
+        function applyPreset(name) {
+            const p = { psychedelic: [70, 80, 12, 140, 30], glitch: [50, 140, 10, 40, 45], subtle: [30, 160, 4, 20, 5], rainbow: [90, 70, 8, 180, 20] }[name];
+            [intensitySlider, thresholdSlider, speedSlider, hueSlider, glitchSlider].forEach((s, i) => s.value = p[i]);
+            [intensityVal, thresholdVal, speedVal, hueVal, glitchVal].forEach((v, i) => v.textContent = p[i]);
+        }
+
+        videoInput.addEventListener('change', e => {
+            if (!e.target.files[0]) return;
+            video.src = URL.createObjectURL(e.target.files[0]);
+            time = 0;
+            video.onloadedmetadata = () => {
+                canvas.width = processWidth;
+                canvas.height = Math.floor(processWidth * video.videoHeight / video.videoWidth);
+                video.play();
+                isPlaying = true;
+                playBtn.disabled = true; stopBtn.disabled = false; recordBtn.disabled = false;
+                statusEl.textContent = 'Готово!';
+                processFrame();
+            };
+        });
+
+        function getBrightness(r, g, b) { return 0.299*r + 0.587*g + 0.114*b; }
+
+        function rgbToHsl(r, g, b) {
+            r/=255; g/=255; b/=255;
+            const max = Math.max(r,g,b), min = Math.min(r,g,b);
+            let h, s, l = (max+min)/2;
+            if (max !== min) {
+                const d = max-min;
+                s = l>0.5 ? d/(2-max-min) : d/(max+min);
+                if (max===r) h=((g-b)/d+(g<b?6:0))/6;
+                else if (max===g) h=((b-r)/d+2)/6;
+                else h=((r-g)/d+4)/6;
+            }
+            return [h*360, s, l];
+        }
+
+        function hslToRgb(h, s, l) {
+            h/=360;
+            if (s===0) return [l*255,l*255,l*255];
+            const q = l<0.5 ? l*(1+s) : l+s-l*s;
+            const p = 2*l-q;
+            const t = x => { if(x<0)x+=1; if(x>1)x-=1; if(x<1/6)return p+(q-p)*6*x; if(x<1/2)return q; if(x<2/3)return p+(q-p)*(2/3-x)*6; return p; };
+            return [Math.round(t(h+1/3)*255), Math.round(t(h)*255), Math.round(t(h-1/3)*255)];
+        }
+
+        function processFrame() {
+            if (!isPlaying) return;
+
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const intensity = +intensitySlider.value;
+            const threshold = +thresholdSlider.value;
+            const speed = +speedSlider.value;
+            const hueShift = +hueSlider.value;
+            const glitchAmount = +glitchSlider.value;
+            const w = canvas.width, h = canvas.height;
+            time += speed * 0.15;
+
+            const imageData = ctx.getImageData(0, 0, w, h);
+            const data = imageData.data;
+
+            for (let y = 0; y < h; y++) {
+                const row = [];
+                const rowStart = y * w * 4;
+                const offset = Math.sin(time + y * 0.008) * intensity;
+                const glitchLine = Math.random() * 100 < glitchAmount * 0.4;
+
+                for (let x = 0; x < w; x++) {
+                    const i = rowStart + x * 4;
+                    let r = data[i], g = data[i+1], b = data[i+2];
+                    
+                    if (glitchLine && Math.random() < glitchAmount * 0.008) {
+                        const shift = Math.floor(Math.random() * glitchAmount * 1.5);
+                        const src = Math.max(0, Math.min(i + shift * 4, data.length - 4));
+                        r = data[src]; g = data[src+1]; b = data[src+2];
+                    }
+                    
+                    if (hueShift > 0) {
+                        const [hslH, hslS, hslL] = rgbToHsl(r, g, b);
+                        const newH = (hslH + hueShift * Math.sin(time * 0.4 + y * 0.004)) % 360;
+                        [r, g, b] = hslToRgb(newH, hslS, hslL);
+                    }
+                    
+                    if (getBrightness(r, g, b) > threshold) row.push({x, r, g, b, b: getBrightness(r,g,b)});
+                }
+
+                row.sort((a, b) => a.b - b.b);
+
+                for (let j = 0; j < row.length; j++) {
+                    const newX = Math.max(0, Math.min(w-1, Math.floor(row[j].x + offset)));
+                    const dest = rowStart + newX * 4;
+                    data[dest] = row[j].r; data[dest+1] = row[j].g; data[dest+2] = row[j].b;
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+
+            if (video.ended) { video.currentTime = 0; video.play(); time = 0; }
+            if (!video.paused) requestAnimationFrame(processFrame);
+        }
+
+        playBtn.onclick = () => { if(video.src) { time=0; video.play(); isPlaying=true; playBtn.disabled=true; stopBtn.disabled=false; processFrame(); }};
+        stopBtn.onclick = () => { video.pause(); isPlaying=false; playBtn.disabled=false; stopBtn.disabled=true; };
+        recordBtn.onclick = () => isRecording ? stopRecording() : startRecording();
+
+        function startRecording() {
+            const stream = canvas.captureStream(20);
+            mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+            recordedChunks = [];
+            mediaRecorder.ondataavailable = e => { if(e.data.size) recordedChunks.push(e.data); };
+            mediaRecorder.onstop = () => {
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(new Blob(recordedChunks, {type:'video/webm'}));
+                a.download = 'pixel-sort.webm'; a.click();
+                statusEl.textContent = 'Сохранено!'; statusEl.classList.remove('recording');
+            };
+            mediaRecorder.start();
+            isRecording = true;
+            recordBtn.textContent = '⏹'; recordBtn.classList.add('recording');
+            statusEl.textContent = 'Запись...'; statusEl.classList.add('recording');
+            video.currentTime = 0; time = 0; video.play(); isPlaying = true; processFrame();
+        }
+
+        function stopRecording() {
+            if (mediaRecorder?.state !== 'inactive') mediaRecorder?.stop();
+            video.pause(); isPlaying = false; isRecording = false;
+            recordBtn.textContent = '⏺'; recordBtn.classList.remove('recording');
+        }
+    </script>
+</body>
+</html>
